@@ -1,0 +1,13 @@
+engagement_id: lab-default
+updated_at: "2026-07-27T18:35:00Z"
+
+# Populated during MODEL phase (SG2.1). Prioritized during RECON.
+targets: []
+
+# Example entry after recon:
+# - id: TGT-1
+#   ip: 10.10.0.5
+#   services: [smb, ldap, kerberos]
+#   priority: high
+#   scenario: AD domain controller enumeration
+#   modules: []

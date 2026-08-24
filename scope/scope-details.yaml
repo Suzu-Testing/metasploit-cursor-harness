@@ -1,0 +1,348 @@
+# ============================================================================
+# SCOPE DETAILS - Structured target inventory with metadata
+# ============================================================================
+# This file provides rich context for agents and subagents beyond the
+# bare CIDRs in scope-master.txt. The hooks reference scope-master.txt
+# for enforcement; this file is informational for agent decision-making.
+# ============================================================================
+
+engagement_id: lab-default
+last_updated: "2026-07-27T19:35:00Z"
+authorized_by: "Lab environment - self-authorized"
+
+networks:
+  - cidr: 10.10.0.0/24
+    name: "Primary lab network"
+    vlan: 10
+    notes: "Internal AD lab, Windows/Linux mix"
+
+  - cidr: 192.168.159.0/24
+    name: "VMware NAT segment"
+    vlan: null
+    notes: "VMware Workstation NAT network for isolated VMs"
+
+  - cidr: 172.17.0.2/32
+    name: "Metasploitable2 Docker container"
+    vlan: null
+    notes: "Docker bridge network, not directly routable from WSL"
+
+  - cidr: 10.255.255.254/32
+    name: "Windows host (WSL gateway)"
+    vlan: null
+    notes: "Docker port-mapped target, reachable from WSL on ports 9xxx"
+
+targets:
+  - ip: 172.17.0.2
+    hostname: metasploitable2
+    os: "Ubuntu 8.04 (Metasploitable2)"
+    role: target
+    status: active
+    docker:
+      container: metasploitable2
+      image: tleemcjr/metasploitable2:late
+      container_id: null
+    access_from_wsl:
+      host: 10.255.255.254
+      note: "Use mapped ports (9xxx) from WSL since Docker bridge is not routable"
+    services:
+      - port: 21
+        mapped_port: 9021
+        proto: tcp
+        name: ftp
+        note: "vsftpd 2.3.4 (backdoor)"
+      - port: 22
+        mapped_port: 9022
+        proto: tcp
+        name: ssh
+      - port: 23
+        mapped_port: 9023
+        proto: tcp
+        name: telnet
+      - port: 25
+        mapped_port: 9025
+        proto: tcp
+        name: smtp
+      - port: 80
+        mapped_port: 9080
+        proto: tcp
+        name: http
+        note: "Apache + PHP"
+      - port: 139
+        mapped_port: 9139
+        proto: tcp
+        name: netbios-ssn
+      - port: 445
+        mapped_port: 9445
+        proto: tcp
+        name: smb
+      - port: 1099
+        mapped_port: 9099
+        proto: tcp
+        name: java-rmi
+      - port: 1524
+        mapped_port: 9524
+        proto: tcp
+        name: ingreslock
+        note: "Backdoor shell"
+      - port: 2121
+        mapped_port: 9121
+        proto: tcp
+        name: ftp-alt
+        note: "ProFTPd"
+      - port: 3306
+        mapped_port: 9306
+        proto: tcp
+        name: mysql
+      - port: 3632
+        mapped_port: 9632
+        proto: tcp
+        name: distcc
+      - port: 5432
+        mapped_port: 9432
+        proto: tcp
+        name: postgresql
+      - port: 5900
+        mapped_port: 9900
+        proto: tcp
+        name: vnc
+      - port: 6200
+        mapped_port: 6200
+        proto: tcp
+        name: nmap-backdoor
+        note: "UnrealIRCd backdoor shell"
+      - port: 6667
+        mapped_port: 9667
+        proto: tcp
+        name: irc
+        note: "UnrealIRCd"
+      - port: 8787
+        mapped_port: 9787
+        proto: tcp
+        name: drb
+        note: "Ruby DRb"
+    notes: "Metasploitable2 - intentionally vulnerable target running as Docker container on Windows host"
+
+  - ip: 10.255.255.254
+    hostname: lab-dvwa
+    os: "Debian (DVWA)"
+    role: target
+    status: active
+    docker:
+      container: lab-dvwa
+      image: vulnerables/web-dvwa
+    access_from_wsl:
+      host: 10.255.255.254
+      port: 9100
+    services:
+      - port: 80
+        mapped_port: 9100
+        proto: tcp
+        name: http
+        note: "Damn Vulnerable Web App - SQLi, XSS, CSRF, file upload"
+    notes: "Default login admin/password. Setup DB via /setup.php on first visit."
+
+  - ip: 10.255.255.254
+    hostname: lab-tomcat
+    os: "Linux (Tomcat 8.5.19)"
+    role: target
+    status: active
+    docker:
+      container: lab-tomcat
+      image: vulhub/tomcat:8.5.19
+    access_from_wsl:
+      host: 10.255.255.254
+      port: 9101
+    services:
+      - port: 8080
+        mapped_port: 9101
+        proto: tcp
+        name: http
+        note: "CVE-2017-12615 JSP upload bypass"
+    notes: "MSF: exploit/multi/http/tomcat_jsp_upload_bypass"
+
+  - ip: 10.255.255.254
+    hostname: lab-struts2
+    os: "Linux (Struts 2.3.30)"
+    role: target
+    status: active
+    docker:
+      container: lab-struts2
+      image: vulhub/struts2:2.3.30
+    access_from_wsl:
+      host: 10.255.255.254
+      port: 9102
+    services:
+      - port: 8080
+        mapped_port: 9102
+        proto: tcp
+        name: http
+        note: "CVE-2017-5638 S2-045 OGNL RCE via Content-Type"
+    notes: "MSF: exploit/multi/http/struts2_content_type_ognl"
+
+  - ip: 10.255.255.254
+    hostname: lab-wordpress
+    os: "Linux (WordPress 4.6)"
+    role: target
+    status: active
+    docker:
+      container: lab-wordpress
+      image: vulhub/wordpress:4.6
+    access_from_wsl:
+      host: 10.255.255.254
+      port: 9103
+    services:
+      - port: 80
+        mapped_port: 9103
+        proto: tcp
+        name: http
+        note: "WordPress 4.6 REST API content injection"
+    notes: "MSF: auxiliary/scanner/http/wordpress_scanner"
+
+  - ip: 10.255.255.254
+    hostname: lab-redis
+    os: "Linux (Redis 4.0.14)"
+    role: target
+    status: active
+    docker:
+      container: lab-redis
+      image: vulhub/redis:4.0.14
+    access_from_wsl:
+      host: 10.255.255.254
+      port: 9137
+    services:
+      - port: 6379
+        mapped_port: 9137
+        proto: tcp
+        name: redis
+        note: "No authentication required"
+    notes: "MSF: auxiliary/scanner/redis/redis_server, exploit/linux/redis/redis_replication_cmd_exec"
+
+  - ip: 10.255.255.254
+    hostname: lab-samba
+    os: "Linux (Samba 4.6.3)"
+    role: target
+    status: active
+    docker:
+      container: lab-samba
+      image: vulhub/samba:4.6.3
+    access_from_wsl:
+      host: 10.255.255.254
+      port: 9145
+    services:
+      - port: 445
+        mapped_port: 9145
+        proto: tcp
+        name: smb
+        note: "CVE-2017-7494 SambaCry"
+    notes: "MSF: exploit/linux/samba/is_known_pipename (requires writable share + upload)"
+
+  - ip: 10.10.0.1
+    hostname: gw.lab.local
+    os: "pfSense 2.7"
+    role: gateway
+    status: excluded
+    notes: "Network gateway - do not scan or exploit"
+
+  - ip: 10.10.0.10
+    hostname: dc01.lab.local
+    os: "Windows Server 2022"
+    role: domain_controller
+    status: active
+    services:
+      - port: 88
+        proto: tcp
+        name: kerberos
+      - port: 389
+        proto: tcp
+        name: ldap
+      - port: 445
+        proto: tcp
+        name: smb
+      - port: 3389
+        proto: tcp
+        name: rdp
+    notes: "Primary DC for lab.local domain"
+
+  - ip: 10.10.0.20
+    hostname: web01.lab.local
+    os: "Ubuntu 24.04"
+    role: web_server
+    status: active
+    services:
+      - port: 80
+        proto: tcp
+        name: http
+      - port: 443
+        proto: tcp
+        name: https
+      - port: 22
+        proto: tcp
+        name: ssh
+    notes: "Apache + PHP web application server"
+
+  - ip: 10.10.0.30
+    hostname: db01.lab.local
+    os: "Ubuntu 24.04"
+    role: database
+    status: active
+    services:
+      - port: 3306
+        proto: tcp
+        name: mysql
+      - port: 22
+        proto: tcp
+        name: ssh
+    notes: "MySQL database backend"
+
+  - ip: 192.168.159.132
+    hostname: msf-target.local
+    os: "Ubuntu 24.04"
+    role: target
+    status: active
+    services:
+      - port: 22
+        proto: tcp
+        name: ssh
+      - port: 445
+        proto: tcp
+        name: smb
+      - port: 8080
+        proto: tcp
+        name: http-alt
+    notes: "General Metasploit target VM"
+
+  - ip: 192.168.159.136
+    hostname: win-target.local
+    os: "Windows 10 21H2"
+    role: target
+    status: active
+    services:
+      - port: 445
+        proto: tcp
+        name: smb
+      - port: 3389
+        proto: tcp
+        name: rdp
+      - port: 135
+        proto: tcp
+        name: msrpc
+    notes: "Windows target for SMB/RDP exploitation"
+
+exclusions:
+  - ip: 10.10.0.1
+    reason: "Gateway / firewall"
+  - ip: 10.10.0.254
+    reason: "Management IPMI"
+  - ip: 192.168.159.1
+    reason: "VMware host interface"
+  - ip: 192.168.159.2
+    reason: "VMware DHCP/DNS"
+
+testing_constraints:
+  max_sessions: 5
+  require_check_before_exploit: true
+  forbidden_module_prefixes:
+    - auxiliary/dos/
+  credential_spray_approval_required: true
+  max_cidr_for_scanning: "/29"
+  allowed_scan_hours: "any"

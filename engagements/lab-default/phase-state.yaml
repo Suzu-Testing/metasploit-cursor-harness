@@ -1,0 +1,16 @@
+engagement_id: lab-default
+engagement_type: internal_ad  # web_app | internal_ad | hybrid | external
+
+current_phase: pre_engage
+phase_entered_at: "2026-07-27T18:35:00Z"
+
+phase_history: []
+
+completed_subgates: {}
+
+loopback_count: 0
+reviewer_approved: false
+
+notes: |
+  Phase workflow initialized. Run gate-check to see pending subgates.
+  Advance phases only when gate criteria and required subgates are complete.

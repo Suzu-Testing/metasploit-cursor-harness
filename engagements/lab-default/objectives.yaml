@@ -1,0 +1,22 @@
+engagement_id: lab-default
+objectives:
+  - id: OBJ-1
+    label: Obtain domain user credentials
+    framework: MITRE-ATT&CK
+    tactic: TA0006
+    status: pending  # pending | in_progress | achieved | blocked | waived
+    evidence: null
+
+  - id: OBJ-2
+    label: Demonstrate lateral movement to second host
+    framework: Unified-Kill-Chain
+    phase: 14
+    status: pending
+    evidence: null
+
+  - id: OBJ-3
+    label: Reach Domain Admin or document blocking controls
+    framework: PTES
+    phase: post_exploitation
+    status: pending
+    evidence: null

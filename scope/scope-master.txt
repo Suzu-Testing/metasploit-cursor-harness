@@ -1,0 +1,39 @@
+# ============================================================================
+# SCOPE MASTER - Authorized Target Ranges
+# ============================================================================
+# Format: One CIDR or IP per line. Lines starting with # are comments.
+# This file is referenced by:
+#   - .cursor/hooks/scope-check.ps1       (shell command gate)
+#   - .cursor/hooks/mcp-action-gate.ps1   (MCP tool gate)
+#   - msf_harness/mcp/policy/roe.py       (server-side ROE enforcement)
+#
+# All three enforcement layers cross-reference this file before allowing
+# any network-facing operation.
+# ============================================================================
+
+# --- Lab Network (internal pentest lab) ---
+10.10.0.0/24
+192.168.159.0/24
+
+# --- Metasploitable2 Docker target ---
+# Container IP on Docker bridge (not routable from WSL directly)
+172.17.0.2
+# Windows host IP as seen from WSL (use with mapped ports 9xxx)
+10.255.255.254
+# Localhost for Docker port-mapped services
+127.0.0.1
+
+# --- Specific lab hosts (if you need individual IPs outside a /24) ---
+# 172.16.50.10
+# 172.16.50.20
+
+# ============================================================================
+# EXCLUSIONS - IPs within authorized ranges that must NOT be targeted
+# ============================================================================
+# Prefix with ! to exclude. The hook will deny commands targeting these
+# even if they fall within an authorized CIDR above.
+#
+!10.10.0.1          # gateway / firewall - do not scan
+!10.10.0.254        # management interface
+!192.168.159.1      # hypervisor host
+!192.168.159.2      # VMware DHCP/DNS

@@ -1,0 +1,64 @@
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+*.egg
+*.whl
+dist/
+build/
+.eggs/
+.env
+.env.*
+!.env.example
+*.pyz
+.venv/
+node_modules/
+
+# Logs (local audit trail, regenerated at runtime)
+logs/
+
+# Evidence (contains sensitive pentest data)
+evidence/msf/*
+!evidence/msf/README.md
+!evidence/msf/.gitkeep
+
+# Engagement runtime state (regenerated at runtime)
+engagements/*/world-state.json
+engagements/*/world-state-index.json
+engagements/*/world-state.md
+engagements/*/lhost.yaml
+
+# Knowledge base (vendored third-party repos, clone separately)
+knowledge-base/
+
+# MCP config contains machine-specific absolute paths
+.cursor/mcp.json
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Test and lint caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.hypothesis/
+.tox/
+.coverage
+htmlcov/
+pip-wheel-metadata/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Defense in depth (private keys, certs)
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519

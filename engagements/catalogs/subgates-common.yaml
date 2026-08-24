@@ -1,0 +1,138 @@
+# Common subgates across all engagement types
+# Used in pre_engage, model, exploit, and report phases
+
+catalog_id: subgates-common
+framework: PTES
+
+subgates:
+  pre_engage:
+    - id: SG0.1-scope-verify
+      label: Verify scope and ROE
+      skill: msf-harness
+      agent: harness-orchestrator
+      tasks:
+        - Read scope/scope-master.txt
+        - Read engagements/{engagement_id}/roe.yaml
+        - Confirm engagement_type and objectives
+      exit_criteria:
+        - Scope CIDRs documented
+        - engagement_id confirmed
+
+    - id: SG0.2-rpc-check
+      label: Confirm Metasploit RPC connectivity
+      skill: msf-harness
+      agent: harness-orchestrator
+      tasks:
+        - Run msf_status
+      exit_criteria:
+        - RPC connected: true
+
+    - id: SG0.3-workflow-init
+      label: Initialize phase workflow state
+      skill: pentest-workflow
+      agent: harness-orchestrator
+      tasks:
+        - Read engagements/{engagement_id}/phase-state.yaml
+        - Identify engagement_type catalog
+      exit_criteria:
+        - current_phase is pre_engage or recon
+
+  model:
+    - id: SG2.1-asset-inventory
+      label: Build prioritized asset list
+      skill: methodology-cheatsheets
+      agent: harness-orchestrator
+      tasks:
+        - Summarize hosts and services from recon evidence
+        - Rank by objective relevance
+        - Map each asset to domain skill (web-app, internal-ad, cloud, container)
+      exit_criteria:
+        - targets.yaml created or updated
+
+    - id: SG2.2-attack-scenarios
+      label: Document attack scenarios
+      skill: methodology-cheatsheets
+      agent: harness-orchestrator
+      tasks:
+        - Map services to likely attack paths (PTES threat modeling)
+        - Tag scenarios with ATT&CK tactics where applicable
+        - Link each scenario to specific harness skills
+      exit_criteria:
+        - At least one scenario per high-value target
+
+    - id: SG2.3-objectives-confirm
+      label: Confirm engagement objectives
+      skill: msf-harness
+      agent: harness-orchestrator
+      tasks:
+        - Read objectives.yaml
+        - Confirm objectives align with ROE scope
+      exit_criteria:
+        - objectives.yaml has status fields per objective
+
+  exploit:
+    - id: SG4.1-reviewer-gate
+      label: Pre-exploitation review
+      skill: msf-exploit-chain
+      agent: msf-reviewer
+      tasks:
+        - Validate module selection and targets
+        - Confirm msf_module_check plan exists
+        - Save review to evidence/msf/review-{date}.md
+      exit_criteria:
+        - Reviewer approval documented
+      required_for_gate: G4-exploit-authorized
+
+    - id: SG4.2-handler-setup
+      label: Configure exploit handler
+      skill: msf-exploit-chain
+      agent: msf-exploit-agent
+      tasks:
+        - msf_start_listener or confirm existing handler
+        - msf_list_listeners to verify
+      exit_criteria:
+        - Handler listening on expected LPORT
+
+    - id: SG4.3-check-and-exploit
+      label: Module check and controlled exploit
+      skill: msf-exploit-chain
+      agent: msf-exploit-agent
+      tasks:
+        - msf_module_check for each target
+        - msf_run_exploit only if check passes
+        - msf_list_active_sessions to verify
+      exit_criteria:
+        - Session obtained OR all candidates marked not vulnerable
+
+  report:
+    - id: SG6.1-findings-compile
+      label: Compile findings with framework tags
+      skill: reporting-pentest
+      agent: harness-orchestrator
+      tasks:
+        - Aggregate evidence from evidence/msf/
+        - Tag findings with WSTG or ATT&CK IDs where applicable
+        - Write evidence/msf/findings-{date}.md
+      exit_criteria:
+        - findings file exists with severity and remediation
+
+    - id: SG6.2-session-cleanup
+      label: Session and handler cleanup
+      skill: msf-post
+      agent: msf-post-agent
+      tasks:
+        - msf_list_active_sessions
+        - msf_terminate_session for each active session
+        - msf_cleanup_jobs to remove orphaned handlers
+      exit_criteria:
+        - Zero active sessions OR waiver documented
+
+    - id: SG6.3-close-engagement
+      label: Mark engagement complete
+      skill: pentest-workflow
+      agent: harness-orchestrator
+      tasks:
+        - Update phase-state.yaml current_phase to complete
+        - Record gate G6 pass in phase_history
+      exit_criteria:
+        - phase-state shows complete

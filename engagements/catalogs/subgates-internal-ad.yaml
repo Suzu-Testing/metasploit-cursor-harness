@@ -1,0 +1,215 @@
+# MITRE ATT&CK aligned subgates for internal/AD engagements
+
+catalog_id: subgates-internal-ad
+framework: MITRE-ATT&CK-Enterprise
+
+subgates:
+  recon:
+    - id: SG-I-RECON-PASSIVE
+      label: Passive and active network recon
+      attck: [TA0043, TA0007]
+      skill: hacktricks-methodology
+      agent: msf-recon-agent
+      tasks:
+        - msf_host_info and msf_service_info for in-scope CIDRs
+        - Load service skills by discovered port
+        - Run auxiliary scanners via msf_run_auxiliary_module where appropriate
+      exit_criteria:
+        - Host and service inventory in evidence/msf/recon-*
+
+    - id: SG-I-AD-ENUM
+      label: Active Directory enumeration
+      attck: [TA0007]
+      skill: internal-ad-pentest
+      agent: msf-recon-agent
+      tasks:
+        - LDAP/SMB/Kerberos discovery for domain context
+        - Document users, groups, trusts, ADCS presence
+      exit_criteria:
+        - Domain name and DC identified OR workgroup confirmed
+
+  analyze:
+    - id: SG-I-VULN-SCAN
+      label: Vulnerability correlation
+      attck: [TA0007]
+      skill: msf-recon
+      agent: msf-recon-agent
+      tasks:
+        - msf_vulnerability_info per host
+        - msf_search_modules per critical service
+        - Map CVEs to exploit candidates
+      exit_criteria:
+        - Module candidate list in evidence/msf/module-search-*
+
+    - id: SG-I-CRED-PATHS
+      label: Credential attack path analysis
+      attck: [TA0006]
+      skill: internal-ad-pentest
+      agent: msf-recon-agent
+      tasks:
+        - Identify spray, roast, relay, and GPP/LAPS paths
+        - Prioritize based on objectives (e.g., Domain Admin)
+      exit_criteria:
+        - Credential paths documented in targets.yaml or evidence
+
+  post_exploit:
+    - id: SG-I-DISCOVERY
+      label: Host and domain discovery from foothold
+      attck: [TA0007]
+      ukc_phase: 10
+      skill: internal-ad-pentest
+      agent: msf-post-agent
+      tasks:
+        - Session enumeration (whoami, sysinfo, ipconfig)
+        - Domain trust and group membership discovery
+      exit_criteria:
+        - Current privilege context documented
+
+    - id: SG-I-CRED-ACCESS
+      label: Credential access
+      attck: [TA0006]
+      ukc_phase: 14
+      skill: internal-ad-pentest
+      agent: msf-post-agent
+      tasks:
+        - Hashdump, kerberoast, AS-REP roast per ROE
+        - msf_credential_info to track harvested creds
+      exit_criteria:
+        - Credential harvest attempted or paths marked blocked
+
+    - id: SG-I-PRIVESC
+      label: Privilege escalation
+      attck: [TA0004]
+      ukc_phase: 12
+      skill: windows-pentest
+      agent: msf-post-agent
+      tasks:
+        - Windows privesc checklist from windows-pentest skill
+        - msf_run_post_module for privesc where applicable
+      exit_criteria:
+        - Elevated context achieved OR escalation paths exhausted
+
+    - id: SG-I-LATERAL
+      label: Lateral movement
+      attck: [TA0008]
+      ukc_phase: 14
+      skill: internal-ad-pentest
+      agent: msf-post-agent
+      tasks:
+        - Pass-the-hash, PSExec, WMI, WinRM
+        - msf_search_modules for lateral movement modules
+      exit_criteria:
+        - Additional hosts accessed OR paths documented as blocked
+
+    - id: SG-I-DOMAIN-DOM
+      label: Domain dominance objective
+      attck: [TA0006]
+      ukc_phase: 18
+      skill: internal-ad-pentest
+      agent: msf-post-agent
+      tasks:
+        - DCSync, golden ticket, ADCS abuse per objectives
+        - Update objectives.yaml status
+      exit_criteria:
+        - Primary objective status is achieved, blocked, or waived
+
+    - id: SG-I-ADCS
+      label: ADCS abuse paths
+      attck: [TA0006]
+      ukc_phase: 16
+      skill: internal-ad-pentest
+      agent: msf-post-agent
+      tasks:
+        - Review ADCS ESC01-ESC15 per objectives
+        - Test certificate template abuse if ADCS present
+      exit_criteria:
+        - ADCS paths attempted or marked N/A
+
+    - id: SG-I-PERSIST
+      label: Persistence mechanisms
+      attck: [TA0003]
+      ukc_phase: 17
+      skill: persistence-pentest
+      agent: msf-post-agent
+      tasks:
+        - Review persistence options per ROE approval
+        - Document persistence paths without deploying unless authorized
+      exit_criteria:
+        - Persistence options documented
+
+    - id: SG-I-PIVOT
+      label: Pivoting and tunneling
+      attck: [TA0008]
+      ukc_phase: 15
+      skill: pivoting-pentest
+      agent: msf-post-agent
+      tasks:
+        - Establish pivot paths to unreachable subnets if objectives require
+        - Document tools and routes
+      exit_criteria:
+        - Pivot plan documented or N/A
+
+    - id: SG-I-EVASION
+      label: EDR and OPSEC review
+      attck: [TA0005]
+      skill: red-team-evasion
+      agent: msf-post-agent
+      tasks:
+        - Review OPSEC before noisy post-ex actions
+        - Note defensive controls encountered
+      exit_criteria:
+        - OPSEC notes in evidence
+
+    - id: SG-I-CLOUD
+      label: Cloud asset discovery from foothold
+      attck: [TA0007]
+      skill: cloud-pentest
+      agent: msf-post-agent
+      tasks:
+        - Check for cloud metadata, credentials, Azure/AWS CLI configs
+        - Enumerate cloud resources if credentials found
+      exit_criteria:
+        - Cloud discovery attempted or marked N/A
+
+    - id: SG-I-CONTAINERS
+      label: Container and DevOps discovery
+      attck: [TA0007]
+      skill: container-devops-pentest
+      agent: msf-post-agent
+      tasks:
+        - Check for docker.sock, kubeconfig, CI tokens on foothold
+        - Test container escape paths if containers present
+      exit_criteria:
+        - Container/DevOps paths documented or N/A
+
+    - id: SG-I-LINUX
+      label: Linux privilege escalation
+      attck: [TA0004]
+      skill: linux-pentest
+      agent: msf-post-agent
+      tasks:
+        - Run Linux privesc checklist on Linux sessions or hosts
+        - msf_run_post_module for linux/gather/* where applicable
+      exit_criteria:
+        - Linux privesc attempted or N/A (no Linux in scope)
+
+    - id: SG-I-MACOS
+      label: macOS privilege escalation
+      attck: [TA0004]
+      skill: macos-pentest
+      agent: msf-post-agent
+      tasks:
+        - Run macOS privesc/TCC checklist on macOS sessions or hosts
+      exit_criteria:
+        - macOS privesc attempted or N/A
+
+    - id: SG-I-LOOPBACK
+      label: New scope discovery check
+      attck: [TA0007]
+      skill: hacktricks-methodology
+      agent: msf-post-agent
+      tasks:
+        - Evaluate if new subnets/services require recon loopback (NIST 800-115)
+        - If yes, trigger phase transition to recon with audit note
+      exit_criteria:
+        - Loopback decision recorded in phase-state.yaml

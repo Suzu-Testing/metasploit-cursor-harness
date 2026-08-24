@@ -1,0 +1,20 @@
+# LHOST Configuration
+# This file tells the harness which IP to use for reverse shell callbacks.
+# It is gitignored because LHOST varies by machine and network config.
+#
+# The MCP server auto-detects LHOST from WSL eth0 if this file is absent.
+# Create this file only if auto-detection gives the wrong IP.
+#
+# Copy this file to lhost.yaml (remove .example) and set your values:
+
+# For WSL2 default networking (most common):
+# lhost is your WSL eth0 IP (run: ip -4 addr show eth0 | grep inet)
+lhost: "172.x.x.x"
+
+# For Docker-from-Windows targets (10.255.255.254 mapped ports):
+# Containers need to reach WSL, so lhost must be routable FROM the container.
+# Usually this is the docker0 bridge gateway or host.docker.internal.
+lhost_docker: "172.17.0.1"
+
+# For VPN/HTB targets:
+# lhost_vpn: "10.10.14.x"

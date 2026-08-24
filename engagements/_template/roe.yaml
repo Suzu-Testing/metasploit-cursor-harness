@@ -1,0 +1,12 @@
+engagement_id: "{{ENGAGEMENT_ID}}"
+engagement_type: internal_ad  # internal_ad, web_app, external, mobile, cloud
+authorized_cidrs:
+  - "{{TARGET_CIDR}}"
+excluded_ips: []
+authorized_domains: []
+forbidden_module_prefixes:
+  - "auxiliary/dos/"
+require_check_before_exploit: true
+max_sessions: 5
+max_scan_cidr: 24
+# credential_spray_approval_required: true  # uncomment if needed

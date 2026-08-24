@@ -1,0 +1,19 @@
+# ============================================================================
+# IN-SCOPE DOMAINS - Hostnames authorized for testing
+# ============================================================================
+# Format: One domain per line. Subdomains are automatically included.
+# e.g. "lab.local" also authorizes "dc01.lab.local", "web.lab.local", etc.
+#
+# The scope-check hook resolves hostnames found in commands and validates
+# them against this list AND the IP ranges in scope-master.txt.
+# ============================================================================
+
+# --- Lab domains ---
+lab.local
+internal.lab
+corp.lab.local
+
+# --- Metasploitable / DVWA / HackTheBox style targets ---
+# metasploitable.local
+# dvwa.local
+# juice-shop.local

@@ -1,0 +1,25 @@
+engagement_id: lab-default
+engagement_type: internal_ad  # web_app | internal_ad | hybrid | external
+authorized_cidrs:
+  - 10.10.0.0/24
+  - 192.168.159.0/24
+  - 172.17.0.2/32       # Metasploitable2 Docker container
+  - 10.255.255.254/32   # Windows host from WSL (Docker port-mapped)
+  - 127.0.0.1/32         # Localhost for Docker port-mapped services
+excluded_ips:
+  - 10.10.0.1          # gateway
+  - 10.10.0.254        # management IPMI
+  - 192.168.159.1      # VMware host
+  - 192.168.159.2      # VMware DHCP/DNS
+authorized_domains:
+  - lab.local
+  - internal.lab
+  - corp.lab.local
+forbidden_module_prefixes:
+  - auxiliary/dos/
+require_check_before_exploit: true
+max_sessions: 5
+max_scan_cidr: 24
+credential_spray_approval_required: true
+objectives_file: objectives.yaml
+phase_state_file: phase-state.yaml

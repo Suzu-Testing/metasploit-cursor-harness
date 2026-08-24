@@ -1,0 +1,91 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          pip install -e ".[mcp,dev]"
+          pip install pytest-cov
+
+      - name: Lint with ruff
+        run: |
+          ruff check msf_harness/ tests/
+
+      - name: Check formatting with ruff
+        run: |
+          ruff format --check msf_harness/ tests/
+
+      - name: Run tests
+        run: |
+          python -m pytest tests/ -v --cov=msf_harness --cov-fail-under=40
+
+  test-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install -e ".[mcp,dev]"
+          pip install pytest-cov
+
+      - name: Run tests
+        run: |
+          python -m pytest tests/ -v
+
+  test-hooks:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run hook tests
+        shell: pwsh
+        run: |
+          & scripts/test-hooks.ps1
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install -e ".[mcp,dev]"
+          pip install pip-audit bandit
+
+      - name: Audit dependencies
+        run: |
+          pip-audit --strict --desc on 2>&1
+
+      - name: Run bandit security scan
+        run: |
+          bandit -r msf_harness/ -c pyproject.toml --severity-level medium -f txt

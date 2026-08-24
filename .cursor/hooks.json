@@ -1,0 +1,120 @@
+{
+  "version": 2,
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": "powershell -ExecutionPolicy Bypass -File .cursor/hooks/session-context.ps1",
+        "failClosed": false,
+        "timeout": 10,
+        "description": "Injects scope, engagement context, world state summary, and hook health status"
+      }
+    ],
+    "beforeMCPExecution": [
+      {
+        "command": "powershell -ExecutionPolicy Bypass -File .cursor/hooks/risk-gate.ps1 -Mode mcp",
+        "matcher": "MCP:msf_",
+        "failClosed": true,
+        "timeout": 15,
+        "description": "Risk scoring for MCP calls; CRITICAL (76+) escalates to human"
+      },
+      {
+        "command": "powershell -ExecutionPolicy Bypass -File .cursor/hooks/mcp-action-gate.ps1",
+        "matcher": "MCP:msf_run_|MCP:msf_send_session|MCP:msf_start_listener|MCP:msf_generate_payload|MCP:msf_terminate_session|MCP:msf_stop_job|MCP:msf_module_check|MCP:msf_console_execute|MCP:msf_db_nmap|MCP:msf_session_upgrade|MCP:msf_db_import|MCP:msf_cleanup_jobs|MCP:msf_route_add|MCP:msf_autoroute|MCP:msf_report_host|MCP:msf_credential_add|MCP:msf_db_add_note|MCP:msf_session_download|MCP:msf_session_upload|MCP:msf_session_run_script|MCP:msf_delete_workspace|MCP:msf_module_results|MCP:msf_job_info",
+        "failClosed": true,
+        "timeout": 15,
+        "description": "Scope enforcement for MCP: validates IPs, domains, CIDRs, and blocks dangerous patterns"
+      },
+      {
+        "command": "powershell -ExecutionPolicy Bypass -File .cursor/hooks/rate-limit-gate.ps1 -Mode mcp",
+        "matcher": "MCP:msf_run_|MCP:msf_send_session|MCP:msf_start_listener|MCP:msf_module_check|MCP:msf_console_execute|MCP:msf_db_nmap|MCP:msf_generate_payload",
+        "failClosed": false,
+        "timeout": 10,
+        "description": "Cooldown enforcement: blocks rapid repetition of identical high-risk actions"
+      },
+      {
+        "command": "powershell -ExecutionPolicy Bypass -File .cursor/hooks/world-state-gate.ps1 -Mode mcp",
+        "matcher": "MCP:msf_run_|MCP:msf_send_session|MCP:msf_start_listener|MCP:msf_module_check|MCP:msf_console_execute|MCP:msf_db_nmap|MCP:msf_session_upgrade|MCP:msf_generate_payload|MCP:msf_db_import|MCP:msf_cleanup_jobs|MCP:msf_run_auxiliary|MCP:msf_run_post|MCP:msf_route_add|MCP:msf_autoroute|MCP:msf_report_host|MCP:msf_credential_add|MCP:msf_db_add_note|MCP:msf_session_download|MCP:msf_session_upload|MCP:msf_session_run_script|MCP:msf_delete_workspace|MCP:msf_module_results|MCP:msf_job_info",
+        "failClosed": false,
+        "timeout": 10,
+        "description": "Duplicate detection: warns if action was already performed in this engagement"
+      }
+    ],
+    "beforeShellExecution": [
+      {
+        "command": "powershell -ExecutionPolicy Bypass -File .cursor/hooks/risk-gate.ps1 -Mode shell",
+        "matcher": "curl|wget|nmap|ssh|hydra|nikto|feroxbuster|gobuster|ffuf|dirb|dirsearch|sqlmap|wpscan|nuclei|httpx|eyewitness|whatweb|msfconsole|msfvenom|metasploit|nc |ncat|netcat|telnet|ftp|socat|proxychains|medusa|patator|crackmapexec|ncrack|netexec|cme|nxc|impacket|secretsdump|psexec|wmiexec|smbexec|atexec|dcomexec|getTGT|getST|GetNPUsers|GetUserSPNs|bloodhound|ldapsearch|rpcclient|smbclient|smbmap|enum4linux|masscan|rustscan|naabu|dig |nslookup|host |dnsrecon|dnsenum|testssl|sslscan|openssl|onesixtyone|snmpwalk|snmpget|snmp-check|smtp-user-enum|swaks|ike-scan|ssh-audit|mssqlclient|mysql|psql|wsl|Invoke-WebRequest|Invoke-RestMethod|Test-NetConnection|Test-Connection",
+        "failClosed": true,
+        "timeout": 15,
+        "description": "Risk scoring for shell commands; CRITICAL (76+) escalates to human"
+      },
+      {
+        "command": "powershell -ExecutionPolicy Bypass -File .cursor/hooks/scope-check.ps1",
+        "matcher": "curl|wget|nmap|ssh|hydra|nikto|feroxbuster|gobuster|ffuf|dirb|dirsearch|sqlmap|wpscan|nuclei|httpx|eyewitness|whatweb|msfconsole|msfvenom|metasploit|nc |ncat|netcat|telnet|ftp|socat|proxychains|medusa|patator|crackmapexec|ncrack|netexec|cme|nxc|impacket|secretsdump|psexec|wmiexec|smbexec|atexec|dcomexec|getTGT|getST|GetNPUsers|GetUserSPNs|bloodhound|ldapsearch|rpcclient|smbclient|smbmap|enum4linux|masscan|rustscan|naabu|dig |nslookup|host |dnsrecon|dnsenum|testssl|sslscan|openssl|onesixtyone|snmpwalk|snmpget|snmp-check|smtp-user-enum|swaks|ike-scan|ssh-audit|mssqlclient|mysql|psql|wsl|Invoke-WebRequest|Invoke-RestMethod|Test-NetConnection|Test-Connection",
+        "failClosed": true,
+        "timeout": 15,
+        "description": "Scope enforcement for shell: validates IPs, hostnames, CIDRs against scope files"
+      },
+      {
+        "command": "powershell -ExecutionPolicy Bypass -File .cursor/hooks/dangerous-command-gate.ps1",
+        "matcher": "slowloris|slowhttp|goldeneye|xerxes|loic|hoic|hulk|hping|torsloris|torshammer|sockstress|rm -rf|del /|format |dd if=|shutdown|reboot|halt|mkfs|fdisk|--force|--hard|-T 4|-T 5|-T4|-T5|--rate|credential.spray|masscan|shred|wipe|cryptsetup|pastebin|transfer.sh|setenforce|chmod 777|passwd root",
+        "failClosed": true,
+        "timeout": 10,
+        "description": "Blocks DoS tools, destructive commands, and data exfiltration patterns"
+      },
+      {
+        "command": "powershell -ExecutionPolicy Bypass -File .cursor/hooks/rate-limit-gate.ps1 -Mode shell",
+        "matcher": "nmap|hydra|nikto|feroxbuster|gobuster|ffuf|sqlmap|nuclei|masscan|msfconsole|msfvenom|crackmapexec|netexec|impacket|secretsdump",
+        "failClosed": false,
+        "timeout": 10,
+        "description": "Cooldown enforcement: blocks rapid repetition of identical high-risk shell commands"
+      },
+      {
+        "command": "powershell -ExecutionPolicy Bypass -File .cursor/hooks/world-state-gate.ps1 -Mode shell",
+        "matcher": "nmap|hydra|nikto|feroxbuster|gobuster|ffuf|sqlmap|nuclei|masscan|msfconsole|msfvenom|crackmapexec|netexec|impacket|secretsdump|rustscan|naabu|wpscan|smbclient|smbmap|enum4linux|ldapsearch|bloodhound",
+        "failClosed": false,
+        "timeout": 10,
+        "description": "Duplicate detection: warns if shell command was already run in this engagement"
+      }
+    ],
+    "afterMCPExecution": [
+      {
+        "command": "powershell -ExecutionPolicy Bypass -File .cursor/hooks/mcp-evidence-logger.ps1",
+        "matcher": "MCP:msf_",
+        "failClosed": false,
+        "timeout": 15,
+        "description": "Logs MCP results to command ledger, saves evidence files, updates world state"
+      },
+      {
+        "command": "powershell -ExecutionPolicy Bypass -File .cursor/hooks/world-state-logger.ps1 -Mode mcp",
+        "matcher": "MCP:msf_run_|MCP:msf_send_session|MCP:msf_start_listener|MCP:msf_module_check|MCP:msf_search_modules|MCP:msf_console_execute|MCP:msf_db_nmap|MCP:msf_session_upgrade|MCP:msf_generate_payload|MCP:msf_db_import|MCP:msf_cleanup_jobs|MCP:msf_run_auxiliary|MCP:msf_run_post",
+        "failClosed": false,
+        "timeout": 10,
+        "description": "Records action to world-state-index.json and world-state.md via Python bridge"
+      }
+    ],
+    "afterShellExecution": [
+      {
+        "command": "powershell -ExecutionPolicy Bypass -File .cursor/hooks/evidence-logger.ps1",
+        "failClosed": false,
+        "timeout": 15,
+        "description": "Logs all shell commands to command ledger and updates world state"
+      },
+      {
+        "command": "powershell -ExecutionPolicy Bypass -File .cursor/hooks/world-state-logger.ps1 -Mode shell",
+        "matcher": "nmap|hydra|nikto|feroxbuster|gobuster|ffuf|sqlmap|nuclei|masscan|msfconsole|msfvenom|crackmapexec|netexec|impacket|secretsdump|rustscan|naabu|wpscan|smbclient|smbmap|enum4linux|ldapsearch|bloodhound",
+        "failClosed": false,
+        "timeout": 10,
+        "description": "Records action to world-state-index.json and world-state.md via Python bridge"
+      }
+    ],
+    "stop": [
+      {
+        "command": "powershell -ExecutionPolicy Bypass -File .cursor/hooks/stop-checklist.ps1",
+        "failClosed": false,
+        "timeout": 15,
+        "loop_limit": 2,
+        "description": "Session-end report: risk summary, active sessions/listeners, cleanup checklist"
+      }
+    ]
+  }
+}

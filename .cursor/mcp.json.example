@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "msf-harness": {
+      "command": "python",
+      "args": ["-m", "msf_harness.mcp.server"],
+      "cwd": "REPLACE_WITH_ABSOLUTE_PATH",
+      "env": {
+        "PYTHONPATH": "REPLACE_WITH_ABSOLUTE_PATH",
+        "MSF_HOST": "127.0.0.1",
+        "MSF_PORT": "55553",
+        "MSF_SSL": "false",
+        "MSF_USER": "msf"
+      }
+    }
+  }
+}

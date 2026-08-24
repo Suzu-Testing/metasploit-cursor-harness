@@ -1,0 +1,96 @@
+# Intentionally vulnerable lab targets for Metasploit Cursor Harness testing.
+# Access from WSL via 10.255.255.254 on mapped 9xxx ports (see scope-details.yaml).
+#
+# Start:  docker compose -f lab/docker-compose.yml up -d
+# Stop:   docker compose -f lab/docker-compose.yml down
+
+services:
+  # Already running standalone as "metasploitable2" - documented here for reference.
+  # Image: tleemcjr/metasploitable2:latest
+  # Ports: 9021, 9022, 9080, 9445, 9667, etc.
+
+  dvwa:
+    image: vulnerables/web-dvwa
+    container_name: lab-dvwa
+    restart: unless-stopped
+    ports:
+      - "9100:80"
+    environment:
+      - MYSQL_HOSTNAME=db
+      - MYSQL_DATABASE=dvwa
+      - MYSQL_USERNAME=dvwa
+      - MYSQL_PASSWORD=p@ssw0rd
+    depends_on:
+      - dvwa-db
+
+  dvwa-db:
+    image: mariadb:10
+    container_name: lab-dvwa-db
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpass
+      - MYSQL_DATABASE=dvwa
+      - MYSQL_USER=dvwa
+      - MYSQL_PASSWORD=p@ssw0rd
+
+  tomcat:
+    # CVE-2017-12615 JSP upload bypass (Metasploit: exploit/multi/http/tomcat_jsp_upload_bypass)
+    image: vulhub/tomcat:8.5.19
+    container_name: lab-tomcat
+    restart: unless-stopped
+    ports:
+      - "9101:8080"
+
+  samba:
+    # CVE-2017-7494 SambaCry (Metasploit: exploit/linux/samba/is_known_pipename)
+    image: vulhub/samba:4.6.3
+    container_name: lab-samba
+    restart: unless-stopped
+    ports:
+      - "9145:445"
+
+  redis:
+    # Unauthenticated Redis (Metasploit: auxiliary/scanner/redis/redis_server, exploit/linux/redis/redis_replication_cmd_exec)
+    image: vulhub/redis:4.0.14
+    container_name: lab-redis
+    restart: unless-stopped
+    ports:
+      - "9137:6379"
+
+  struts2:
+    # CVE-2017-5638 S2-045 (Metasploit: exploit/multi/http/struts2_content_type_ognl)
+    image: vulhub/struts2:2.3.30
+    container_name: lab-struts2
+    restart: unless-stopped
+    ports:
+      - "9102:8080"
+
+  wordpress:
+    # WordPress 4.6 REST API content injection (Metasploit: auxiliary/scanner/http/wordpress_scanner)
+    image: vulhub/wordpress:4.6
+    container_name: lab-wordpress
+    restart: unless-stopped
+    ports:
+      - "9103:80"
+
+  metasploitable3:
+    # Metasploitable3 on Ubuntu 14.04 - multiple vulnerable services
+    image: kirscht/metasploitable3-ub1404
+    container_name: lab-ms3
+    entrypoint: /entrypoint.sh
+    environment:
+      SMB: "yes"
+      SSH: "yes"
+      FTP: "yes"
+      IRC: "yes"
+      HTTP: "yes"
+      SQL: "yes"
+    ports:
+      - "10445:445"    # SMB
+      - "10139:139"    # NetBIOS
+      - "10022:22"     # SSH
+      - "10021:21"     # FTP
+      - "10080:80"     # HTTP
+      - "10667:6667"   # IRC (UnrealIRCd)
+      - "10306:3306"   # MySQL
+    restart: unless-stopped

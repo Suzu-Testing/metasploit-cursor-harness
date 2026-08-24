@@ -1,0 +1,156 @@
+# OWASP WSTG v4.2 aligned subgates for web application engagements
+
+catalog_id: subgates-web-app
+framework: OWASP-WSTG-v4.2
+
+subgates:
+  recon:
+    - id: SG-W-INFO
+      label: WSTG-INFO Information Gathering
+      wstg: INFO
+      skill: web-app-pentest
+      agent: msf-recon-agent
+      tasks:
+        - Fingerprint tech stack (headers, errors, wappalyzer)
+        - Map endpoints, methods, cookies, auth mechanisms
+        - Check for virtual hosts and hidden parameters
+      exit_criteria:
+        - Tech stack documented
+        - Entry points and auth flows listed
+
+  analyze:
+    - id: SG-W-CONF
+      label: WSTG-CONF Configuration and Deployment
+      wstg: CONF
+      skill: web-app-pentest
+      agent: msf-recon-agent
+      tasks:
+        - Test default credentials, directory listing, backup files
+        - Review source code management exposure, management interfaces
+      exit_criteria:
+        - Config findings logged or category marked N/A
+
+    - id: SG-W-IDNT
+      label: WSTG-IDNT Identity Management
+      wstg: IDNT
+      skill: web-app-pentest
+      agent: msf-recon-agent
+      tasks:
+        - User registration, account provisioning, username enumeration
+      exit_criteria:
+        - Role/user matrix started
+
+    - id: SG-W-ATHN
+      label: WSTG-ATHN Authentication
+      wstg: ATHN
+      skill: web-app-pentest
+      agent: msf-recon-agent
+      tasks:
+        - Brute force protections, MFA bypass, password reset flaws
+      exit_criteria:
+        - Auth mechanisms tested or deferred with reason
+
+    - id: SG-W-AUTHZ
+      label: WSTG-AUTHZ Authorization
+      wstg: AUTHZ
+      skill: web-app-pentest
+      agent: msf-recon-agent
+      tasks:
+        - Horizontal and vertical privilege tests, IDOR, path traversal in auth context
+      exit_criteria:
+        - IDOR tests per role completed
+
+    - id: SG-W-SESS
+      label: WSTG-SESS Session Management
+      wstg: SESS
+      skill: web-app-pentest
+      agent: msf-recon-agent
+      tasks:
+        - Cookie flags, session fixation, logout, timeout
+      exit_criteria:
+        - Session handling documented
+
+    - id: SG-W-INPV
+      label: WSTG-INPV Input Validation
+      wstg: INPV
+      skill: web-app-pentest
+      agent: msf-recon-agent
+      tasks:
+        - SQLi, XSS, CMDi, SSTI, XXE, SSRF, file upload, deserialization
+        - Use vuln-class skills (sqli-pentest, xss-pentest, etc.) for payloads
+      exit_criteria:
+        - All input vectors enumerated and probed
+
+    - id: SG-W-ERRH
+      label: WSTG-ERRH Error Handling
+      wstg: ERRH
+      skill: web-app-pentest
+      agent: msf-recon-agent
+      tasks:
+        - Trigger errors; verify no stack traces or sensitive leakage
+      exit_criteria:
+        - Error responses reviewed
+
+    - id: SG-W-CRYP
+      label: WSTG-CRYP Cryptography
+      wstg: CRYP
+      skill: web-app-pentest
+      agent: msf-recon-agent
+      tasks:
+        - TLS config, weak ciphers, JWT/OAuth token handling
+      exit_criteria:
+        - Transport and token crypto reviewed
+
+    - id: SG-W-BUSL
+      label: WSTG-BUSL Business Logic
+      wstg: BUSL
+      skill: web-app-pentest
+      agent: msf-recon-agent
+      tasks:
+        - Workflow abuse, race conditions, price/quantity manipulation
+      exit_criteria:
+        - Critical workflows tested
+
+    - id: SG-W-CLNT
+      label: WSTG-CLNT Client-side
+      wstg: CLNT
+      skill: web-app-pentest
+      agent: msf-recon-agent
+      tasks:
+        - DOM XSS, postMessage, CORS, clickjacking, prototype pollution
+      exit_criteria:
+        - Client-side sinks reviewed
+
+    - id: SG-W-APIT
+      label: WSTG-APIT API Testing
+      wstg: APIT
+      skill: web-app-pentest
+      agent: msf-recon-agent
+      tasks:
+        - REST/GraphQL authz, mass assignment, BOLA, rate limits
+      exit_criteria:
+        - API endpoints tested if present
+
+    - id: SG-W-AI
+      label: WSTG-AI LLM and AI integration testing
+      wstg: APIT
+      skill: ai-llm-pentest
+      agent: msf-recon-agent
+      tasks:
+        - Test prompt injection, tool/MCP abuse, and sensitive data leakage in AI features
+        - Cross-test underlying API auth with web-app-pentest
+      exit_criteria:
+        - AI integration points tested or marked N/A
+
+  post_exploit:
+    - id: SG-W-POST-MIN
+      label: Web foothold validation
+      wstg: null
+      attck: TA0001
+      skill: msf-post
+      agent: msf-post-agent
+      tasks:
+        - Validate shell access context (user, hostname)
+        - Document pivot potential to internal network if discovered
+      exit_criteria:
+        - Post-ex evidence saved to evidence/msf/post-*

@@ -1,0 +1,43 @@
+---
+description: Enforces rules of engagement for all Metasploit operations
+alwaysApply: true
+---
+
+# Engagement Rules of Engagement
+
+All Metasploit operations in this harness are subject to strict rules of engagement.
+
+## Mandatory Requirements
+
+1. **Workflow**: Follow the phase -> gate -> subgate model in `.cursor/skills/pentest-workflow/SKILL.md`. Do not skip phases or hard gates (G0, G2, G4, G6).
+2. **Scope enforcement**: Every target IP must be in `scope/scope-master.txt` or the active engagement's `roe.yaml` authorized_cidrs. Domains must be in `scope/in-scope-domains.txt` or `authorized_domains`.
+3. **Engagement ID**: Every destructive MCP tool call must include an `engagement_id` parameter. If no engagement is active, create one with `python scripts/create-engagement.py --name <name>`.
+4. **No DoS modules**: Modules matching `auxiliary/dos/*` are forbidden unconditionally. Do not attempt to work around this restriction.
+5. **Check before exploit**: Always run `msf_module_check` before `msf_run_exploit`. The server enforces this when `require_check_before_exploit: true` in the ROE. If the check says "not vulnerable", do not exploit.
+6. **Reviewer gate**: SG4.1-reviewer-gate must pass before any exploitation (G4 hard gate).
+7. **Session limits**: Do not exceed the `max_sessions` value in the active ROE (default: 5). The server fails closed if session count cannot be verified.
+8. **CIDR width**: Scan targets cannot be broader than `max_scan_cidr` (default: /24). Narrow the target range before scanning.
+9. **Evidence**: Tool outputs auto-save to `evidence/msf/` via hooks. Manual evidence should follow the naming conventions in `evidence/msf/README.md`.
+
+## ROE Enforcement Layers
+
+| Layer | Mechanism | Behavior |
+|-------|-----------|----------|
+| Python ROE | `msf_harness/mcp/policy/roe.py` | Server-side: CIDR, domain, module, session, exploit-gate, CIDR width |
+| MCP Hooks | `mcp-action-gate.ps1` | Pre-call: scope, domain, CIDR width, forbidden module/pattern check |
+| Shell Hooks | `scope-check.ps1` | Pre-call: IP extraction, domain, CIDR validation |
+| Rate Limit | `rate-limit-gate.ps1` | Pre-call: cooldown for repeated high-risk actions |
+| World-State | `world-state-gate.ps1` | Pre-call: duplicate action detection |
+| Evidence | `mcp-evidence-logger.ps1` | Post-call: auto-save, ledger, atomic world state |
+
+## Scope File Format
+
+`scope/scope-master.txt` contains one CIDR or IP per line. Lines starting with `#` are comments. Lines starting with `!` are exclusions.
+
+## ROE File Format
+
+`engagements/{engagement_id}/roe.yaml` defines per-engagement rules. Use `engagements/_template/` as a starting point.
+
+## When in Doubt
+
+If scope or authorization is unclear, **stop and ask the user**. Never assume a target is in scope.

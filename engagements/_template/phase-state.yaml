@@ -1,0 +1,16 @@
+engagement_id: "{{engagement_id}}"
+engagement_type: "{{engagement_type}}"
+
+current_phase: pre_engage
+phase_entered_at: "{{created_at}}"
+
+phase_history: []
+
+completed_subgates: {}
+
+loopback_count: 0
+reviewer_approved: false
+
+notes: |
+  Phase workflow initialized. Run gate-check to see pending subgates.
+  Advance phases only when gate criteria and required subgates are complete.

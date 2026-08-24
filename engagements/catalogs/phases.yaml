@@ -1,0 +1,257 @@
+# Unified pentest phase model
+# Synthesizes PTES (macro phases), NIST 800-115 (loopback), OWASP WSTG (web subgates),
+# MITRE ATT&CK (post-exploit taxonomy), Unified Kill Chain (objectives)
+
+version: 1
+frameworks:
+  macro: PTES
+  web_subgates: OWASP-WSTG-v4.2
+  internal_subgates: MITRE-ATT&CK-Enterprise
+  loopback: NIST-SP-800-115
+
+phases:
+  pre_engage:
+    order: 0
+    label: Pre-Engagement
+    ptes: 1
+    hard_gate: true
+    agent: harness-orchestrator
+    skills: [msf-harness, pentest-knowledge-base]
+    allowed_tools: [msf_status]
+    gate_id: G0-pre-engage
+    gate_criteria:
+      - id: scope_defined
+        check: file_exists
+        path: scope/scope-master.txt
+      - id: roe_loaded
+        check: file_exists
+        path: engagements/{engagement_id}/roe.yaml
+      - id: rpc_connected
+        check: mcp_tool
+        tool: msf_status
+        expect: connected
+      - id: phase_state_initialized
+        check: file_exists
+        path: engagements/{engagement_id}/phase-state.yaml
+    next_phase: recon
+    subgate_catalog: subgates-common.yaml
+    subgate_group: pre_engage
+
+  recon:
+    order: 1
+    label: Intelligence Gathering
+    ptes: 2
+    hard_gate: false
+    agent: msf-recon-agent
+    skills: [msf-recon, hacktricks-methodology, pentest-knowledge-base, methodology-cheatsheets]
+    skills_by_type:
+      web_app: [web-app-pentest, ai-llm-pentest]
+      internal_ad: [internal-ad-pentest, hacktricks-methodology]
+      hybrid: [web-app-pentest, internal-ad-pentest, hacktricks-methodology, cloud-pentest, container-devops-pentest, ai-llm-pentest]
+    allowed_tools:
+      - msf_search_modules
+      - msf_module_info
+      - msf_host_info
+      - msf_service_info
+      - msf_vulnerability_info
+      - msf_note_info
+      - msf_credential_info
+      - msf_loot_info
+      - msf_run_auxiliary_module
+    loopback_from: [post_exploit]
+    gate_id: G1-recon-complete
+    gate_criteria:
+      - id: hosts_discovered
+        check: evidence_or_mcp
+        tool: msf_host_info
+        min_count: 1
+      - id: services_mapped
+        check: evidence_or_mcp
+        tool: msf_service_info
+      - id: recon_evidence_saved
+        check: evidence_dir
+        path: evidence/msf/
+        pattern: "recon-*"
+      - id: subgates_complete
+        check: subgates
+        required: true
+    next_phase: model
+    subgate_catalog_by_type:
+      web_app: subgates-web-app.yaml
+      internal_ad: subgates-internal-ad.yaml
+      hybrid: subgates-internal-ad.yaml
+    subgate_group: recon
+
+  model:
+    order: 2
+    label: Threat Modeling
+    ptes: 3
+    hard_gate: true
+    agent: harness-orchestrator
+    skills: [pentest-knowledge-base, methodology-cheatsheets, msf-harness]
+    allowed_tools:
+      - msf_host_info
+      - msf_service_info
+      - msf_vulnerability_info
+    gate_id: G2-threat-model
+    gate_criteria:
+      - id: objectives_defined
+        check: file_exists
+        path: engagements/{engagement_id}/objectives.yaml
+      - id: targets_prioritized
+        check: file_exists
+        path: engagements/{engagement_id}/targets.yaml
+      - id: subgates_complete
+        check: subgates
+        required: true
+    next_phase: analyze
+    subgate_catalog: subgates-common.yaml
+    subgate_group: model
+
+  analyze:
+    order: 3
+    label: Vulnerability Analysis
+    ptes: 4
+    hard_gate: false
+    agent: msf-recon-agent
+    skills: [msf-recon, pentest-knowledge-base]
+    skills_by_type:
+      web_app: [web-app-pentest, cloud-pentest, ai-llm-pentest]
+      internal_ad: [internal-ad-pentest, cloud-pentest, container-devops-pentest, linux-pentest]
+      hybrid: [web-app-pentest, internal-ad-pentest, cloud-pentest, container-devops-pentest, ai-llm-pentest]
+    allowed_tools:
+      - msf_search_modules
+      - msf_module_info
+      - msf_vulnerability_info
+      - msf_module_check
+      - msf_run_auxiliary_module
+    gate_id: G3-vuln-analysis
+    gate_criteria:
+      - id: vulns_triaged
+        check: evidence_or_mcp
+        tool: msf_vulnerability_info
+      - id: exploit_candidates
+        check: evidence_dir
+        path: evidence/msf/
+        pattern: "module-search-*"
+      - id: subgates_complete
+        check: subgates
+        required: true
+    next_phase: exploit
+    subgate_catalog_by_type:
+      web_app: subgates-web-app.yaml
+      internal_ad: subgates-internal-ad.yaml
+      hybrid: subgates-web-app.yaml
+    subgate_group: analyze
+
+  exploit:
+    order: 4
+    label: Exploitation
+    ptes: 5
+    hard_gate: true
+    reviewer_required: true
+    reviewer_agent: msf-reviewer
+    agent: msf-exploit-agent
+    skills: [msf-exploit-chain, msf-harness]
+    skills_by_type:
+      web_app: [web-app-pentest]
+      internal_ad: [internal-ad-pentest]
+    allowed_tools:
+      - msf_module_info
+      - msf_module_check
+      - msf_start_listener
+      - msf_list_listeners
+      - msf_run_exploit
+      - msf_run_auxiliary_module
+      - msf_list_active_sessions
+      - msf_generate_payload
+    gate_id: G4-exploit-authorized
+    gate_criteria:
+      - id: reviewer_approved
+        check: evidence_dir
+        path: evidence/msf/
+        pattern: "review-*"
+        soft: true
+      - id: module_check_passed
+        check: audit_log
+        tool: msf_module_check
+      - id: foothold_or_closed
+        check: one_of
+        options:
+          - mcp_tool: msf_list_active_sessions
+            min_count: 1
+          - phase_note: exploitation_closed_no_vulns
+      - id: subgates_complete
+        check: subgates
+        required: true
+    next_phase: post_exploit
+    subgate_catalog: subgates-common.yaml
+    subgate_group: exploit
+
+  post_exploit:
+    order: 5
+    label: Post-Exploitation
+    ptes: 6
+    hard_gate: false
+    agent: msf-post-agent
+    skills: [msf-post, internal-ad-pentest, hacktricks-methodology, cloud-pentest, container-devops-pentest, linux-pentest, macos-pentest, methodology-cheatsheets]
+    skills_by_type:
+      web_app: [msf-post, cloud-pentest, linux-pentest]
+      internal_ad: [msf-post, internal-ad-pentest, cloud-pentest, container-devops-pentest, linux-pentest, macos-pentest]
+      hybrid: [msf-post, internal-ad-pentest, web-app-pentest, cloud-pentest, container-devops-pentest, linux-pentest, macos-pentest]
+    allowed_tools:
+      - msf_list_active_sessions
+      - msf_send_session_command
+      - msf_run_post_module
+      - msf_credential_info
+      - msf_loot_info
+      - msf_terminate_session
+    loopback_to: recon
+    loopback_trigger: new_hosts_or_services_discovered
+    gate_id: G5-objectives
+    gate_criteria:
+      - id: objectives_assessed
+        check: objectives_status
+        path: engagements/{engagement_id}/objectives.yaml
+      - id: evidence_collected
+        check: evidence_dir
+        path: evidence/msf/
+        pattern: "post-*"
+      - id: subgates_complete
+        check: subgates
+        required: true
+    next_phase: report
+    subgate_catalog_by_type:
+      web_app: subgates-web-app.yaml
+      internal_ad: subgates-internal-ad.yaml
+    subgate_group: post_exploit
+
+  report:
+    order: 6
+    label: Reporting
+    ptes: 7
+    hard_gate: true
+    agent: harness-orchestrator
+    skills: [pentest-knowledge-base, methodology-cheatsheets, msf-harness]
+    allowed_tools:
+      - msf_list_active_sessions
+      - msf_credential_info
+      - msf_loot_info
+      - msf_vulnerability_info
+    gate_id: G6-engagement-closed
+    gate_criteria:
+      - id: findings_documented
+        check: evidence_dir
+        path: evidence/msf/
+        pattern: "findings-*"
+      - id: sessions_cleaned
+        check: mcp_tool
+        tool: msf_list_active_sessions
+        expect_count: 0
+        soft: true
+      - id: subgates_complete
+        check: subgates
+        required: true
+    next_phase: complete
+    subgate_catalog: subgates-common.yaml
+    subgate_group: report

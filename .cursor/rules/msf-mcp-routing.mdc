@@ -1,0 +1,82 @@
+---
+description: Routes Metasploit operations to MCP tools instead of raw shell commands
+alwaysApply: true
+---
+
+# MCP Routing
+
+Always prefer the msf-harness MCP tools over raw `msfconsole` shell commands.
+
+## When to Use MCP
+
+| Operation | MCP Tool | NOT shell |
+|-----------|----------|-----------|
+| Search modules | `msf_search_modules` | `msfconsole -x "search ..."` |
+| Module details | `msf_module_info` | `msfconsole -x "info ..."` |
+| Module options | `msf_module_options` | `msfconsole -x "show options"` |
+| List by type | `msf_list_modules` | `msfconsole -x "show exploits"` |
+| Running stats | `msf_running_stats` | N/A |
+| Async job results | `msf_module_results` | N/A |
+| Query hosts | `msf_host_info` | `msfconsole -x "hosts"` |
+| Query services | `msf_service_info` | `msfconsole -x "services"` |
+| Query vulns | `msf_vulnerability_info` | `msfconsole -x "vulns"` |
+| Query notes | `msf_note_info` | `msfconsole -x "notes"` |
+| Query creds | `msf_credential_info` | `msfconsole -x "creds"` |
+| Query loot | `msf_loot_info` | `msfconsole -x "loot"` |
+| DB status | `msf_db_status` | `msfconsole -x "db_status"` |
+| RPC status | `msf_status` | `msfconsole -x "version"` |
+| Run exploit | `msf_run_exploit` | `msfconsole -x "use ...; exploit"` |
+| Run auxiliary | `msf_run_auxiliary_module` | `msfconsole -x "use auxiliary/...; run"` |
+| Run post module | `msf_run_post_module` | `msfconsole -x "use post/...; run"` |
+| Check vuln | `msf_module_check` | `msfconsole -x "use ...; check"` |
+| Session commands | `msf_send_session_command` | `msfconsole -x "sessions -i ..."` |
+| Session info | `msf_session_info` | `msfconsole -x "sessions -i X"` |
+| Session script | `msf_session_run_script` | `sessions -i X` then `run <script>` |
+| List sessions | `msf_list_active_sessions` | `msfconsole -x "sessions"` |
+| Start handler | `msf_start_listener` | `msfconsole -x "use multi/handler; ..."` |
+| List handlers | `msf_list_listeners` | `msfconsole -x "jobs"` |
+| Job details | `msf_job_info` | `msfconsole -x "jobs -v"` |
+| Stop job | `msf_stop_job` | `msfconsole -x "jobs -k ..."` |
+| Kill session | `msf_terminate_session` | `msfconsole -x "sessions -k ..."` |
+| Wait for session | `msf_wait_for_session` | polling in shell |
+| List payloads | `msf_list_payloads` | `msfconsole -x "show payloads"` |
+| Generate payload | `msf_generate_payload` | `msfvenom -p ...` |
+| Compatible payloads | `msf_compatible_payloads` | `msfconsole -x "show payloads"` after use |
+| Lab network info | `msf_get_lab_network` | manual YAML reading |
+| Upgrade session | `msf_session_upgrade` | `sessions -u <id>` |
+| List workspaces | `msf_list_workspaces` | `msfconsole -x "workspace"` |
+| Create workspace | `msf_create_workspace` | `msfconsole -x "workspace -a ..."` |
+| Switch workspace | `msf_set_workspace` | `msfconsole -x "workspace ..."` |
+| Delete workspace | `msf_delete_workspace` | `msfconsole -x "workspace -d ..."` |
+| Import scan data | `msf_db_import` | `msfconsole -x "db_import ..."` |
+| Run nmap + import | `msf_db_nmap` | `msfconsole -x "db_nmap ..."` |
+| Clean up jobs | `msf_cleanup_jobs` | `msfconsole -x "jobs -K"` |
+| Console command | `msf_console_execute` | `msfconsole -x "..."` |
+| List consoles | `msf_console_list` | N/A |
+| Session sysinfo | `msf_session_sysinfo` | `sessions -i X` then `sysinfo` |
+| Session getuid | `msf_session_getuid` | `sessions -i X` then `getuid` |
+| Session processes | `msf_session_ps` | `sessions -i X` then `ps` |
+| Download file | `msf_session_download` | `sessions -i X` then `download` |
+| Upload file | `msf_session_upload` | `sessions -i X` then `upload` |
+| List routes | `msf_route_list` | `msfconsole -x "route print"` |
+| Add route | `msf_route_add` | `msfconsole -x "route add ..."` |
+| Remove route | `msf_route_delete` | `msfconsole -x "route remove ..."` |
+| Autoroute | `msf_autoroute` | `run post/multi/manage/autoroute` |
+| Report host | `msf_report_host` | `msfconsole -x "hosts -a ..."` |
+| Store credential | `msf_credential_add` | `msfconsole -x "creds -a ..."` |
+| Add note | `msf_db_add_note` | `msfconsole -x "notes -a ..."` |
+
+## When Shell is Acceptable
+
+- Database operations (`msfdb init`, `msfdb start`)
+- Starting `msfrpcd` in WSL
+- Operations not yet exposed in the MCP
+
+## Why MCP over Shell
+
+- Structured JSON responses instead of parsing terminal output
+- Server-side ROE enforcement on every call (CIDR, domain, module, session limits)
+- Hook-based audit logging and world-state tracking
+- No risk of shell injection or command parsing errors
+- Engagement ID tracking for attribution
+- Automatic evidence file generation
